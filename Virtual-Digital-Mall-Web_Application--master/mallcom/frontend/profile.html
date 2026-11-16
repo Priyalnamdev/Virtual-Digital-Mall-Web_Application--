@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mallcom - Profile</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: #f7f7f8; min-height: 100vh; }
+    .navbar {
+        height: 60px; width: 100%; background: #fff; display: flex;
+        align-items: center; justify-content: center; position: fixed; top: 0;
+        z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .navbar-menu { list-style: none; display: flex; gap: 50px; }
+    .navbar-menu a { color: #000; text-decoration: none; padding: 0.4em 0.8em; font-size: 16px; }
+    .navbar-menu a:hover { background: rgba(0,0,0,0.1); border-radius: 5px; }
+
+    .page-wrapper { padding: 120px 20px 40px; display: flex; justify-content: center; }
+    .card {
+        background: #fff; border-radius: 12px; padding: 36px 44px; width: 100%; max-width: 420px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .card h2 { margin-bottom: 20px; }
+    .row { margin-bottom: 14px; }
+    .row .label { font-size: 12px; color: #888; text-transform: uppercase; }
+    .row .value { font-size: 16px; color: #111; }
+    .badge {
+        display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;
+        background: #eef; color: #334;
+    }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <ul class="navbar-menu">
+        <li><a href="Minor_project.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="profile.html">Profile</a></li>
+        <li><a href="#" id="navAuthLink">Login</a></li>
+    </ul>
+</nav>
+
+<div class="page-wrapper">
+    <div class="card" id="profileCard">
+        <h2>My Profile</h2>
+        <div class="row"><div class="label">Full Name</div><div class="value" id="pFullName">-</div></div>
+        <div class="row"><div class="label">Email</div><div class="value" id="pEmail">-</div></div>
+        <div class="row"><div class="label">Role</div><div class="value"><span class="badge" id="pRole">-</span></div></div>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+    (async function () {
+        const user = await MallcomAuth.requireLogin();
+        if (!user) return;
+        await MallcomAuth.renderNav();
+        document.getElementById('pFullName').textContent = user.fullName;
+        document.getElementById('pEmail').textContent = user.email;
+        document.getElementById('pRole').textContent = user.role;
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+services:
+
+  # ==========================================
+  # FRONTEND
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: mallcom-frontend
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      - backend
+
+
+  # ==========================================
+  # BACKEND
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+
+    container_name: mallcom-backend
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      DB_HOST: mysql
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+
+  # ==========================================
+  # MYSQL DATABASE
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+
+    container_name: mallcom-mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: website
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - mallcom-db:/var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-uroot",
+          "-proot"
+        ]
+
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+# ==========================================
+# PERSISTENT MYSQL STORAGE
+# ==========================================
+volumes:
+
+  mallcom-db:

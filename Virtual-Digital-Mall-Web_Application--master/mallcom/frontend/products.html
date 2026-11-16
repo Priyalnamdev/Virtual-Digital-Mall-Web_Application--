@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mallcom - Products</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: #f7f7f8; min-height: 100vh; }
+
+    .navbar {
+        height: 60px; width: 100%; background: #fff; display: flex;
+        align-items: center; justify-content: center; position: fixed; top: 0;
+        z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .navbar-menu { list-style: none; display: flex; gap: 50px; }
+    .navbar-menu a { color: #000; text-decoration: none; padding: 0.4em 0.8em; font-size: 16px; }
+    .navbar-menu a:hover { background: rgba(0,0,0,0.1); border-radius: 5px; }
+
+    .page-wrapper { padding: 100px 40px 40px; max-width: 1200px; margin: 0 auto; }
+    h1 { margin-bottom: 20px; }
+
+    .toolbar {
+        display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .toolbar input, .toolbar select {
+        padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 15px;
+    }
+    .toolbar input { flex: 1; min-width: 200px; }
+
+    .grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px;
+    }
+    .card {
+        background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex; flex-direction: column;
+    }
+    .card img { width: 100%; height: 160px; object-fit: cover; background: #eee; }
+    .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+    .card-body h3 { font-size: 16px; margin-bottom: 4px; }
+    .card-body .category { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .card-body .desc { font-size: 13px; color: #555; flex: 1; margin-bottom: 10px; }
+    .card-body .price { font-size: 18px; font-weight: bold; color: #000; }
+
+    .empty, .loading { text-align: center; color: #888; padding: 60px 0; grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <ul class="navbar-menu">
+        <li><a href="Minor_project.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li data-role="USER"><a href="profile.html">Profile</a></li>
+        <li data-role="ADMIN"><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="#" id="navAuthLink">Login</a></li>
+    </ul>
+</nav>
+
+<div class="page-wrapper">
+    <h1>Products</h1>
+
+    <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Search products by name...">
+        <select id="categorySelect">
+            <option value="">All Categories</option>
+        </select>
+    </div>
+
+    <div class="grid" id="productGrid">
+        <div class="loading">Loading products...</div>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+    const API_BASE = 'http://localhost:8080/api/products';
+    let allProducts = [];
+
+    async function init() {
+        // Products are only visible to logged-in users (USER or ADMIN)
+        const user = await MallcomAuth.requireLogin();
+        if (!user) return;
+        await MallcomAuth.renderNav();
+        await loadProducts();
+    }
+
+    async function loadProducts(name = '', category = '') {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '<div class="loading">Loading products...</div>';
+
+        const params = new URLSearchParams();
+        if (name) params.set('name', name);
+        if (category) params.set('category', category);
+
+        try {
+            const res = await fetch(`${API_BASE}?${params.toString()}`, { credentials: 'include' });
+            if (res.status === 401) { window.location.href = 'login.html'; return; }
+            if (res.status === 403) { grid.innerHTML = '<div class="empty">Access Denied.</div>'; return; }
+
+            const body = await res.json();
+            const products = body.data || [];
+            if (!name && !category) {
+                allProducts = products;
+                populateCategoryFilter(products);
+            }
+            renderProducts(products);
+        } catch (err) {
+            grid.innerHTML = '<div class="empty">Cannot connect to the server. Is the backend running on port 8080?</div>';
+        }
+    }
+
+    function populateCategoryFilter(products) {
+        const select = document.getElementById('categorySelect');
+        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            select.appendChild(opt);
+        });
+    }
+
+    function renderProducts(products) {
+        const grid = document.getElementById('productGrid');
+        if (products.length === 0) {
+            grid.innerHTML = '<div class="empty">No products found.</div>';
+            return;
+        }
+        grid.innerHTML = products.map(p => `
+            <div class="card">
+                <img src="${p.image || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${p.name}">
+                <div class="card-body">
+                    <h3>${p.name}</h3>
+                    <div class="category">${p.category || ''}</div>
+                    <div class="desc">${p.description || ''}</div>
+                    <div class="price">₹${p.price}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    let searchTimer;
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            loadProducts(e.target.value.trim(), document.getElementById('categorySelect').value);
+        }, 300);
+    });
+
+    document.getElementById('categorySelect').addEventListener('change', (e) => {
+        loadProducts(document.getElementById('searchInput').value.trim(), e.target.value);
+    });
+
+    init();
+</script>
+</body>
+</html>

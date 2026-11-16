@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mallcom - Admin Dashboard</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: #f7f7f8; min-height: 100vh; }
+
+    .navbar {
+        height: 60px; width: 100%; background: #fff; display: flex;
+        align-items: center; justify-content: center; position: fixed; top: 0;
+        z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .navbar-menu { list-style: none; display: flex; gap: 50px; }
+    .navbar-menu a { color: #000; text-decoration: none; padding: 0.4em 0.8em; font-size: 16px; }
+    .navbar-menu a:hover { background: rgba(0,0,0,0.1); border-radius: 5px; }
+
+    .page-wrapper { padding: 100px 40px 40px; max-width: 1100px; margin: 0 auto; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h1 { font-size: 26px; }
+
+    .btn {
+        padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold;
+        cursor: pointer; color: #fff;
+    }
+    .btn-primary { background: #000; }
+    .btn-primary:hover { background: #333; }
+    .btn-edit { background: #2d6cdf; padding: 6px 12px; font-size: 13px; }
+    .btn-delete { background: #e74c3c; padding: 6px 12px; font-size: 13px; }
+
+    table {
+        width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+    th { background: #fafafa; font-weight: bold; }
+    td img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; background: #eee; }
+    .actions { display: flex; gap: 8px; }
+
+    .empty { text-align: center; color: #888; padding: 40px 0; }
+
+    /* Modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        align-items: center; justify-content: center; z-index: 2000;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+        background: #fff; border-radius: 10px; padding: 28px; width: 100%; max-width: 440px;
+    }
+    .modal h2 { margin-bottom: 18px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #444; }
+    input, textarea {
+        width: 100%; padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 14px;
+    }
+    textarea { resize: vertical; min-height: 60px; }
+    .field-error { color: #c0392b; font-size: 12px; margin-top: 4px; display: none; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-secondary { background: #ccc; color: #333; }
+    .alert { padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .alert-error { background: #ffeaea; color: #c0392b; border: 1px solid #e74c3c; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <ul class="navbar-menu">
+        <li><a href="Minor_project.html">Home</a></li>
+        <li><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="#" id="navAuthLink">Login</a></li>
+    </ul>
+</nav>
+
+<div class="page-wrapper">
+    <div class="header-row">
+        <h1>Admin Dashboard — Products</h1>
+        <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Description</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="productTableBody">
+            <tr><td colspan="6" class="empty">Loading products...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Add / Edit modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h2 id="modalTitle">Add Product</h2>
+        <div class="alert alert-error" id="formError"></div>
+        <form id="productForm">
+            <input type="hidden" id="productId">
+            <div class="form-group">
+                <label for="name">Product Name *</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="price">Price *</label>
+                <input type="number" id="price" min="0.01" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <input type="text" id="category" required>
+            </div>
+            <div class="form-group">
+                <label for="image">Image URL</label>
+                <input type="text" id="image" placeholder="https://...">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="saveBtn">Save Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+    const API_BASE = 'http://localhost:8080/api/admin/products';
+
+    async function init() {
+        // Only an authenticated ADMIN may see this page
+        const user = await MallcomAuth.requireAdmin();
+        if (!user) return;
+        await MallcomAuth.renderNav();
+        await loadProducts();
+    }
+
+    async function loadProducts() {
+        const tbody = document.getElementById('productTableBody');
+        try {
+            const res = await fetch(API_BASE, { credentials: 'include' });
+            if (res.status === 403) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty">Access Denied.</td></tr>';
+                return;
+            }
+            const body = await res.json();
+            renderTable(body.data || []);
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">Cannot connect to the server.</td></tr>';
+        }
+    }
+
+    function renderTable(products) {
+        const tbody = document.getElementById('productTableBody');
+        if (products.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">No products yet. Click "Add Product" to create one.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = products.map(p => `
+            <tr>
+                <td><img src="${p.image || 'https://via.placeholder.com/50'}" alt=""></td>
+                <td>${p.name}</td>
+                <td>${p.category || ''}</td>
+                <td>₹${p.price}</td>
+                <td>${(p.description || '').slice(0, 60)}</td>
+                <td class="actions">
+                    <button class="btn btn-edit" onclick='openEditModal(${JSON.stringify(p)})'>Edit</button>
+                    <button class="btn btn-delete" onclick="deleteProduct(${p.id}, '${(p.name || '').replace(/'/g, "\\'")}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // ---- Modal handling ----
+    const overlay = document.getElementById('modalOverlay');
+    const form = document.getElementById('productForm');
+    const formError = document.getElementById('formError');
+
+    document.getElementById('addProductBtn').onclick = () => openAddModal();
+    document.getElementById('cancelBtn').onclick = () => closeModal();
+
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add Product';
+        form.reset();
+        document.getElementById('productId').value = '';
+        formError.style.display = 'none';
+        overlay.classList.add('open');
+    }
+
+    function openEditModal(product) {
+        document.getElementById('modalTitle').textContent = 'Edit Product';
+        document.getElementById('productId').value = product.id;
+        document.getElementById('name').value = product.name || '';
+        document.getElementById('description').value = product.description || '';
+        document.getElementById('price').value = product.price || '';
+        document.getElementById('category').value = product.category || '';
+        document.getElementById('image').value = product.image || '';
+        formError.style.display = 'none';
+        overlay.classList.add('open');
+    }
+
+    function closeModal() {
+        overlay.classList.remove('open');
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        formError.style.display = 'none';
+
+        const id = document.getElementById('productId').value;
+        const payload = {
+            name: document.getElementById('name').value.trim(),
+            description: document.getElementById('description').value.trim(),
+            price: parseFloat(document.getElementById('price').value),
+            category: document.getElementById('category').value.trim(),
+            image: document.getElementById('image').value.trim()
+        };
+
+        // Client-side validation, mirrors backend rules
+        if (!payload.name) { return showFormError('Product name is required.'); }
+        if (!payload.category) { return showFormError('Category is required.'); }
+        if (isNaN(payload.price) || payload.price <= 0) { return showFormError('Price must be a positive number.'); }
+
+        const url = id ? `${API_BASE}/${id}` : API_BASE;
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            const body = await res.json();
+            if (!res.ok) {
+                const msg = body.data && typeof body.data === 'object'
+                    ? Object.values(body.data).join(', ')
+                    : (body.message || 'Something went wrong.');
+                return showFormError(msg);
+            }
+            closeModal();
+            await loadProducts();
+        } catch (err) {
+            showFormError('Cannot connect to the server.');
+        }
+    });
+
+    function showFormError(msg) {
+        formError.textContent = msg;
+        formError.style.display = 'block';
+    }
+
+    async function deleteProduct(id, name) {
+        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE', credentials: 'include' });
+            if (!res.ok) {
+                const body = await res.json();
+                alert(body.message || 'Failed to delete product.');
+                return;
+            }
+            await loadProducts();
+        } catch (err) {
+            alert('Cannot connect to the server.');
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>

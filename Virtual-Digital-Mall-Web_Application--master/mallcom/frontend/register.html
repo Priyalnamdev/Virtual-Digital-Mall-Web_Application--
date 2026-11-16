@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mallcom - Register</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: url('https://i.pinimg.com/564x/40/b4/05/40b4054ddd4187fcba75da094c8db6f5.jpg') no-repeat center center/cover;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            height: 60px;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1rem;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .navbar-menu {
+            list-style: none;
+            display: flex;
+            gap: 60px;
+        }
+        .navbar-menu a {
+            color: #000;
+            text-decoration: none;
+            padding: 0.4em 0.8em;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .navbar-menu a:hover {
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 80px;
+            padding-bottom: 40px;
+        }
+
+        .auth-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 12px;
+            padding: 36px 48px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+
+        .auth-card h2 {
+            font-size: 26px;
+            margin-bottom: 6px;
+            color: #111;
+        }
+        .auth-card .subtitle {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #000; }
+
+        .password-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 13px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover { background-color: #333; }
+        .btn-primary:disabled { background-color: #888; cursor: not-allowed; }
+
+        .alt-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        .alt-link a { color: #000; font-weight: bold; text-decoration: none; }
+        .alt-link a:hover { text-decoration: underline; }
+
+        .alert {
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .alert-error   { background: #ffeaea; color: #c0392b; border: 1px solid #e74c3c; }
+        .alert-success { background: #eaffea; color: #27ae60; border: 1px solid #2ecc71; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <ul class="navbar-menu">
+        <li><a href="Minor_project.html">Home</a></li>
+        <li><a href="brands.html">Brands</a></li>
+        <li><a href="luxery.html">Luxury</a></li>
+        <li><a href="Explore_Brands.html">Featured Stores</a></li>
+        <li><a href="search.html">Search</a></li>
+    </ul>
+</nav>
+
+<div class="page-wrapper">
+    <div class="auth-card">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join Mallcom and explore luxury brands</p>
+
+        <div class="alert alert-error"   id="errorAlert"></div>
+        <div class="alert alert-success" id="successAlert"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="fullName">Full Name <span style="color:red">*</span></label>
+                <input type="text" id="fullName" placeholder="John Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email <span style="color:red">*</span></label>
+                <input type="email" id="email" placeholder="your@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password <span style="color:red">*</span></label>
+                <input type="password" id="password" placeholder="Minimum 6 characters" required minlength="6">
+                <p class="password-hint">At least 6 characters required</p>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password <span style="color:red">*</span></label>
+                <input type="password" id="confirmPassword" placeholder="Re-enter password" required>
+            </div>
+
+            <button type="submit" class="btn-primary" id="registerBtn">Create Account</button>
+        </form>
+
+        <p class="alt-link">
+            Already have an account? <a href="login.html">Sign in</a>
+        </p>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+    const API_BASE = 'http://localhost:8080/api/auth';
+
+    // If a real session already exists, skip registration entirely.
+    (async () => {
+        const user = await MallcomAuth.getCurrentUser();
+        if (user) {
+            window.location.href = user.role === 'ADMIN' ? 'admin-dashboard.html' : 'Minor_project.html';
+        }
+    })();
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn          = document.getElementById('registerBtn');
+        const errorAlert   = document.getElementById('errorAlert');
+        const successAlert = document.getElementById('successAlert');
+
+        errorAlert.style.display   = 'none';
+        successAlert.style.display = 'none';
+
+        const password        = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            errorAlert.textContent  = 'Passwords do not match.';
+            errorAlert.style.display = 'block';
+            return;
+        }
+
+        const payload = {
+            fullName: document.getElementById('fullName').value.trim(),
+            email:    document.getElementById('email').value.trim(),
+            password: password
+        };
+
+        btn.disabled  = true;
+        btn.innerHTML = '<span class="spinner"></span> Creating account...';
+
+        try {
+            const res  = await fetch(`${API_BASE}/register`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                successAlert.textContent  = `Account created! Welcome, ${payload.fullName}! Redirecting to login...`;
+                successAlert.style.display = 'block';
+                setTimeout(() => window.location.href = 'login.html', 1800);
+            } else {
+                errorAlert.textContent  = data.message || 'Registration failed. Please try again.';
+                errorAlert.style.display = 'block';
+                btn.disabled  = false;
+                btn.textContent = 'Create Account';
+            }
+        } catch (err) {
+            errorAlert.textContent  = 'Cannot connect to server. Make sure the backend is running on port 8080.';
+            errorAlert.style.display = 'block';
+            btn.disabled  = false;
+            btn.textContent = 'Create Account';
+        }
+    });
+</script>
+</body>
+</html>
